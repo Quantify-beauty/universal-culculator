@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="数値化モデル">
+<title>縮毛矯正/コスメストレート 数値化モデル Open Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0f1a2e;
+  --bg2:      #152038;
+  --surface:  #1c2a42;
+  --surface2: #243350;
+  --border:   #2e4060;
+  --border2:  #3a5080;
+  --text:     #e8eef8;
+  --muted:    #7a9ac0;
+  --light:    #1a2840;
+  --accent:   #4a90d8;
+  --accent2:  #2a6ab8;
+
+  /* 薬剤カラー */
+  --c1: #50b8e0;   /* 水色 TGA① */
+  --c2: #88c840;   /* 黄緑 TGA② */
+  --c3: #e87898;   /* ピンク CAhcl/CA */
+  --c4: #b088e0;   /* 明るい紫 その他複合 */
+  --c5: #e8e8e8;   /* 白 その他添加剤 */
+  --b1: #a06830;   /* 茶色 GMT */
+  --b2: #909090;   /* グレー TG/CA */
+  --b3: #d83030;   /* 赤 SPI */
+  --b4: #282828;   /* 黒 CA */
+  --b5: #e8e8e8;   /* 白 その他 */
+
+  --sans: 'Noto Sans JP', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html, body, .main { background:var(--bg); }
+body { color:var(--text); font-family:var(--sans); min-height:100vh; padding-bottom:60px; }
+
+/* ── ヘッダー ── */
+header {
+  background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  padding:26px 20px 20px; text-align:center; position:relative;
+}
+header::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  background:linear-gradient(90deg, var(--c1), var(--c3), var(--c4), var(--b3));
+}
+.header-en {
+  font-family:var(--mono); font-size:10px; letter-spacing:.4em;
+  text-transform:uppercase; color:var(--muted); margin-bottom:8px;
+}
+.header-title {
+  font-size:18px; font-weight:700; color:var(--text);
+  letter-spacing:.06em; margin-bottom:3px; line-height:1.4;
+}
+.header-sub {
+  font-size:10px; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--accent); margin-bottom:6px;
+}
+.header-credit { font-size:9px; color:var(--muted); letter-spacing:.1em; }
+.header-rule { width:32px; height:1px; background:var(--accent); margin:8px auto; }
+
+/* ── メイン ── */
+.main { max-width:600px; margin:0 auto; padding:20px 16px 0; }
+
+.sec-label {
+  font-size:10px; font-weight:700; letter-spacing:.2em; text-transform:uppercase;
+  color:var(--muted); margin-bottom:10px;
+  display:flex; align-items:center; gap:10px;
+}
+.sec-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+.type-label {
+  font-size:9px; font-weight:700; letter-spacing:.16em;
+  color:var(--muted); margin-bottom:8px; margin-top:6px;
+  display:flex; align-items:center; gap:8px;
+}
+.type-label::after { content:''; flex:1; height:1px; background:var(--border); opacity:.5; }
+
+/* ── 薬剤入力カード ── */
+.drug-input-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+
+.drug-inp-card {
+  background:var(--surface); border:1.5px solid var(--border);
+  border-radius:10px; padding:12px 12px 10px;
+  transition:all .18s; position:relative;
+}
+.drug-inp-card.selected { border-color:var(--card-color); }
+.dic-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.dic-dot {
+  width:28px; height:28px; border-radius:50%;
+  background:var(--card-color,var(--accent));
+  display:flex; align-items:center; justify-content:center;
+  font-size:9px; font-weight:700; color:#fff; flex-shrink:0;
+  opacity:.85;
+}
+.drug-inp-card.selected .dic-dot { opacity:1; }
+.dic-name { font-size:11px; font-weight:700; color:var(--text); line-height:1.3; flex:1; }
+.dic-abbr { font-family:var(--mono); font-size:9px; color:var(--card-color,var(--muted)); }
+.dic-inp-row { display:flex; align-items:baseline; gap:4px; margin-bottom:8px; }
+.dic-inp {
+  flex:1; background:var(--light); border:1.5px solid var(--border);
+  border-radius:5px; padding:6px 8px; font-family:var(--mono); font-size:18px;
+  font-weight:500; outline:none; color:var(--text); transition:border-color .15s;
+  text-align:center; min-width:0;
+}
+.dic-inp:focus { border-color:var(--accent); }
+.dic-inp::placeholder { color:var(--border2); }
+.dic-unit { font-family:var(--mono); font-size:11px; color:var(--muted); flex-shrink:0; }
+.dic-select-btn {
+  width:100%; background:var(--surface2); border:1.5px solid var(--border);
+  border-radius:5px; padding:7px; font-size:11px; font-weight:700;
+  color:var(--muted); cursor:pointer; transition:all .15s; letter-spacing:.06em;
+}
+.drug-inp-card.selected .dic-select-btn {
+  background:var(--card-color); border-color:var(--card-color); color:#fff;
+}
+.dic-select-btn:hover { border-color:var(--accent); color:var(--text); }
+
+/* ── スロット ── */
+.slot-row {
+  background:var(--surface); border:1.5px solid var(--border); border-radius:8px;
+  padding:10px 14px; margin-bottom:7px;
+  display:flex; align-items:center; gap:10px;
+}
+.slot-dot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.slot-info { flex:1; min-width:0; }
+.slot-name { font-size:12px; font-weight:700; margin-bottom:1px; }
+.slot-conc { font-family:var(--mono); font-size:10px; color:var(--muted); }
+.slot-ratio-inp {
+  width:50px; background:var(--light); border:1.5px solid var(--border);
+  border-radius:4px; padding:6px 8px; font-family:var(--mono); font-size:17px;
+  font-weight:500; text-align:center; outline:none; color:var(--text); transition:border-color .15s;
+}
+.slot-ratio-inp:focus { border-color:var(--accent); }
+.slot-colon { font-family:var(--mono); font-size:13px; color:var(--border2); }
+.slot-del { background:none; border:none; color:var(--muted); font-size:14px; cursor:pointer; padding:0 4px; flex-shrink:0; }
+.slot-del:hover { color:#e05050; }
+
+.boost-row {
+  background:var(--surface); border:1.5px solid var(--border); border-radius:8px;
+  padding:10px 14px; margin-bottom:7px;
+  display:flex; align-items:center; gap:10px;
+}
+.boost-pct-inp {
+  width:58px; background:var(--light); border:1.5px solid var(--border);
+  border-radius:4px; padding:6px 8px; font-family:var(--mono); font-size:16px;
+  font-weight:500; text-align:center; outline:none; color:var(--text); transition:border-color .15s;
+}
+.boost-pct-inp:focus { border-color:var(--accent); }
+
+.empty-slots {
+  background:var(--surface); border:1.5px dashed var(--border); border-radius:8px;
+  padding:14px; text-align:center; color:var(--muted); font-size:12px;
+  line-height:1.8; margin-bottom:8px;
+}
+
+/* ── 総量フィールド ── */
+.field {
+  background:var(--surface); border:1.5px solid var(--border); border-radius:8px;
+  padding:14px 18px 12px; margin-bottom:14px; transition:border-color .15s;
+}
+.field:focus-within { border-color:var(--accent); }
+.field label { display:block; font-size:11px; font-weight:700; letter-spacing:.14em; color:var(--muted); margin-bottom:7px; }
+.field-row { display:flex; align-items:baseline; gap:6px; }
+.field-row input { flex:1; background:none; border:none; color:var(--text); font-family:var(--mono); font-size:28px; font-weight:500; outline:none; min-width:0; }
+.field-row input::placeholder { color:var(--border2); }
+.field-unit { font-family:var(--mono); font-size:14px; color:var(--muted); }
+
+/* ── ボタン ── */
+.calc-btn {
+  width:100%; background:var(--accent); color:#fff; border:none; border-radius:8px;
+  padding:16px; font-size:14px; font-weight:700; letter-spacing:.12em;
+  cursor:pointer; transition:all .18s; margin-bottom:10px;
+}
+.calc-btn:hover { background:var(--accent2); transform:translateY(-1px); box-shadow:0 6px 20px rgba(74,144,216,.3); }
+.calc-btn:disabled { opacity:.3; cursor:not-allowed; transform:none; }
+
+.ai-btn {
+  width:100%; background:var(--surface2); color:var(--text); border:1.5px solid var(--border);
+  border-radius:8px; padding:14px; font-size:13px; font-weight:700; letter-spacing:.1em;
+  cursor:pointer; transition:all .18s; margin-bottom:12px;
+  display:none;
+}
+.ai-btn:hover { border-color:var(--accent); color:var(--accent); }
+.ai-btn.show { display:block; }
+
+.reset-btn {
+  width:100%; background:none; border:1.5px solid var(--border); border-radius:8px;
+  padding:10px; color:var(--muted); font-size:12px; font-weight:700;
+  cursor:pointer; transition:all .15s; margin-bottom:20px;
+}
+.reset-btn:hover { border-color:var(--accent); color:var(--accent); }
+
+/* ── 結果 ── */
+.result-panel {
+  border:1.5px solid var(--border); border-radius:12px; overflow:hidden;
+  margin-bottom:14px; display:none; opacity:0; transform:translateY(8px);
+  transition:opacity .3s, transform .3s;
+}
+.result-panel.visible { display:block; }
+.result-panel.show { opacity:1; transform:translateY(0); }
+
+.res-hero {
+  background:linear-gradient(135deg, var(--accent2), var(--accent));
+  padding:20px 24px;
+}
+.res-hero-label { font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:rgba(255,255,255,.65); margin-bottom:5px; }
+.res-hero-val { font-family:var(--mono); font-size:46px; font-weight:500; color:#fff; line-height:1; }
+.res-hero-unit { font-size:16px; color:rgba(255,255,255,.55); margin-left:4px; }
+
+.res-amounts {
+  background:var(--light); padding:12px 16px;
+  display:grid; grid-template-columns:1fr 1fr; gap:8px;
+  border-bottom:1px solid var(--border);
+}
+.res-amt {
+  background:var(--surface); border-radius:8px; padding:11px 13px;
+  border-left:3px solid var(--item-color,var(--accent));
+}
+.res-amt-label { font-size:11px; font-weight:700; color:var(--item-color,var(--accent)); margin-bottom:3px; line-height:1.3; }
+.res-amt-val { font-family:var(--mono); font-size:22px; font-weight:500; }
+.res-amt-unit { font-size:11px; color:var(--muted); margin-left:2px; }
+.res-amt-pct { font-size:9px; color:var(--muted); margin-top:2px; }
+
+.res-conc { background:var(--surface); padding:14px 18px; }
+.res-conc-title { font-size:10px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+.res-conc-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:7px; }
+.res-ci { background:var(--light); border-radius:6px; padding:10px 12px; }
+.res-ci-label { font-size:9px; font-weight:700; letter-spacing:.08em; margin-bottom:4px; }
+.res-ci-val { font-family:var(--mono); font-size:17px; font-weight:500; }
+.res-ci-unit { font-size:10px; color:var(--muted); margin-left:2px; }
+.res-ci-zero { opacity:.3; }
+
+/* ── AI診断 ── */
+.ai-panel {
+  border-radius:12px; overflow:hidden; margin-bottom:14px;
+  display:none; border:2px solid var(--ai-border,var(--border));
+}
+.ai-panel.show { display:block; }
+.ai-panel-header {
+  padding:16px 20px 12px;
+  background:var(--ai-bg,var(--surface));
+  border-bottom:1px solid var(--ai-border,var(--border));
+  display:flex; align-items:center; gap:10px;
+}
+.ai-icon { font-size:24px; }
+.ai-level { font-size:14px; font-weight:700; color:var(--ai-color,var(--text)); }
+.ai-pct { font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:2px; }
+.ai-body { padding:14px 20px; background:var(--surface); }
+.ai-msg { font-size:12px; line-height:2.0; color:var(--text); }
+.ai-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.ai-tag {
+  font-size:10px; font-weight:700; padding:4px 10px; border-radius:12px;
+  border:1px solid var(--ai-border,var(--border)); color:var(--ai-color,var(--text));
+}
+
+/* ── 注意事項 ── */
+.notice {
+  background:var(--surface); border:1px solid var(--border); border-radius:8px;
+  padding:16px 18px; margin-bottom:20px;
+}
+.notice-title { font-size:11px; font-weight:700; color:var(--accent); margin-bottom:10px; letter-spacing:.1em; }
+.notice p { font-size:10px; color:var(--muted); line-height:2.0; margin-bottom:6px; }
+.notice p:last-child { margin-bottom:0; }
+
+/* ── Toast ── */
+#toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--text); color:var(--bg); padding:10px 22px; border-radius:20px; font-size:12px; opacity:0; transition:all .3s; z-index:9000; white-space:nowrap; pointer-events:none; }
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<header>
+  <div class="header-en">Quantify Beauty</div>
+  <div class="header-rule"></div>
+  <div class="header-title">縮毛矯正/コスメストレート<br>数値化モデル</div>
+  <div class="header-sub">Open Calculator</div>
+  <div class="header-credit">監修 QUANTIFY BEAUTY</div>
+</header>
+
+<div class="main">
+
+  <!-- ベース剤 -->
+  <div class="sec-label" style="margin-top:4px">STEP 1　還元剤を登録・選択（1〜5種）</div>
+
+  <div class="type-label">医薬部外品</div>
+  <div class="drug-input-grid">
+    <!-- ① TGA水色 -->
+    <div class="drug-inp-card" id="dc-1" style="--card-color:var(--c1)">
+      <div class="dic-header">
+        <div class="dic-dot">TGA</div>
+        <div><div class="dic-name">チオグリコール酸アンモニウム①</div><div class="dic-abbr">TGA①</div></div>
+      </div>
+      <div class="dic-inp-row">
+        <input type="number" class="dic-inp" id="conc-1" placeholder="0.0" min="0" max="20" step="0.1" oninput="onConcInput()">
+        <span class="dic-unit">%</span>
+      </div>
+      <button class="dic-select-btn" onclick="toggleBase(1)">選択する</button>
+    </div>
+    <!-- ② TGA黄緑 -->
+    <div class="drug-inp-card" id="dc-2" style="--card-color:var(--c2)">
+      <div class="dic-header">
+        <div class="dic-dot" style="background:var(--c2)">TGA</div>
+        <div><div class="dic-name">チオグリコール酸アンモニウム②</div><div class="dic-abbr">TGA②</div></div>
+      </div>
+      <div class="dic-inp-row">
+        <input type="number" class="dic-inp" id="conc-2" placeholder="0.0" min="0" max="20" step="0.1" oninput="onConcInput()">
+        <span class="dic-unit">%</span>
+      </div>
+      <button class="dic-select-btn" onclick="toggleBase(2)">選択する</button>
+    </div>
+  </div>
+
+  <div class="type-label">化粧品登録</div>
+  <div class="drug-input-grid">
+    <!-- ③ CAhcl ピンク -->
+    <div class="drug-inp-card" id="dc-3" style="--card-color:var(--c3)">
+      <div class="dic-header">
+        <div class="dic-dot" style="background:var(--c3)">CA</div>
+        <div><div class="dic-name">システアミン</div><div class="dic-abbr">CAhcl/CA③</div></div>
+      </div>
+      <div class="dic-inp-row">
+        <input type="number" class="dic-inp" id="conc-3" placeholder="0.0" min="0" max="20" step="0.1" oninput="onConcInput()">
+        <span class="dic-unit">%</span>
+      </div>
+      <button class="dic-select-btn" onclick="toggleBase(3)">選択する</button>
+    </div>
+    <!-- ④ その他複合 紫 -->
+    <div class="drug-inp-card" id="dc-4" style="--card-color:var(--c4)">
+      <div class="dic-header">
+        <div class="dic-dot" style="background:var(--c4)">他</div>
+        <div><div class="dic-name">その他の複合剤</div><div class="dic-abbr">その他④</div></div>
+      </div>
+      <div class="dic-inp-row">
+        <input type="number" class="dic-inp" id="conc-4" placeholder="0.0" min="0" max="20" step="0.1" oninput="onConcInput()">
+        <span class="dic-unit">%</span>
+      </div>
+      <button class="dic-select-btn" onclick="toggleBase(4)">選択する</button>
+    </div>
+    <!-- ⑤ その他添加剤 白 -->
+    <div class="drug-inp-card" id="dc-5" style="--card-color:var(--c5)">
+      <div class="dic-header">
+        <div class="dic-dot" style="background:var(--c5);color:#333">他</div>
+        <div><div class="dic-name">その他添加剤</div><div class="dic-abbr">添加剤⑤</div></div>
+      </div>
+      <div class="dic-inp-row">
+        <input type="number" class="dic-inp" id="conc-5" placeholder="0.0" min="0" max="20" step="0.1" oninput="onConcInput()">
+        <span class="dic-unit">%</span>
+      </div>
+      <button class="dic-select-btn" onclick="toggleBase(5)">選択する</button>
+    </div>
+  </div>
+
+  <!-- STEP2 配合比率 -->
+  <div class="sec-label">STEP 2　配合比率を入力</div>
+  <div id="base-slots">
+    <div class="empty-slots">STEP1で還元剤を登録・選択してください</div>
+  </div>
+
+  <!-- 添加還元剤 -->
+  <div class="sec-label">STEP 3　添加還元剤を登録・選択（任意・0〜5種）</div>
+
+  <div class="drug-input-grid">
+    <!-- ❶ GMT 茶色 -->
+    <div class="drug-inp-card" id="db-1" style="--card-color:var(--b1)">
+      <div class="dic-header">
+        <div class="dic-dot" style="background:var(--b1)">GMT</div>
+        <div><div class="dic-name">GMT</div><div class="dic-abbr">GMT❶</div></div>
+      </div>
+      <div class="dic-inp-row">
+        <input type="number" class="dic-inp" id="bconc-1" placeholder="0.0" min="0" max="100" step="0.1" oninput="onConcInput()">
+        <span class="dic-unit">%</span>
+      </div>
+      <button class="dic-select-btn" onclick="toggleBoost(1)">選択する</button>
+    </div>
+    <!-- ❷ TG/CA グレー -->
+    <div class="drug-inp-card" id="db-2" style="--card-color:var(--b2)">
+      <div class="dic-header">
+        <div class="dic-dot" style="background:var(--b2)">TG</div>
+        <div><div class="dic-name">チオグリコール酸システアミン</div><div class="dic-abbr">TG/CA❷</div></div>
+      </div>
+      <div class="dic-inp-row">
+        <input type="number" class="dic-inp" id="bconc-2" placeholder="0.0" min="0" max="100" step="0.1" oninput="onConcInput()">
+        <span class="dic-unit">%</span>
+      </div>
+      <button class="dic-select-btn" onclick="toggleBoost(2)">選択する</button>
+    </div>
+    <!-- ❸ SPI 赤 -->
+    <div class="drug-inp-card" id="db-3" style="--card-color:var(--b3)">
+      <div class="dic-header">
+        <div class="dic-dot" style="background:var(--b3)">SPI</div>
+        <div><div class="dic-name">スピエラ</div><div class="dic-abbr">SPI❸</div></div>
+      </div>
+      <div class="dic-inp-row">
+        <input type="number" class="dic-inp" id="bconc-3" placeholder="0.0" min="0" max="100" step="0.1" oninput="onConcInput()">
+        <span class="dic-unit">%</span>
+      </div>
+      <button class="dic-select-btn" onclick="toggleBoost(3)">選択する</button>
+    </div>
+    <!-- ❹ CA 黒 -->
+    <div class="drug-inp-card" id="db-4" style="--card-color:var(--b4)">
+      <div class="dic-header">
+        <div class="dic-dot" style="background:var(--b4);border:1px solid var(--border)">CA</div>
+        <div><div class="dic-name">システアミン</div><div class="dic-abbr">CA❹</div></div>
+      </div>
+      <div class="dic-inp-row">
+        <input type="number" class="dic-inp" id="bconc-4" placeholder="0.0" min="0" max="100" step="0.1" oninput="onConcInput()">
+        <span class="dic-unit">%</span>
+      </div>
+      <button class="dic-select-btn" onclick="toggleBoost(4)">選択する</button>
+    </div>
+    <!-- ❺ その他 白 -->
+    <div class="drug-inp-card" id="db-5" style="--card-color:var(--b5)">
+      <div class="dic-header">
+        <div class="dic-dot" style="background:var(--b5);color:#333">他</div>
+        <div><div class="dic-name">その他添加剤</div><div class="dic-abbr">その他❺</div></div>
+      </div>
+      <div class="dic-inp-row">
+        <input type="number" class="dic-inp" id="bconc-5" placeholder="0.0" min="0" max="100" step="0.1" oninput="onConcInput()">
+        <span class="dic-unit">%</span>
+      </div>
+      <button class="dic-select-btn" onclick="toggleBoost(5)">選択する</button>
+    </div>
+  </div>
+
+  <!-- 添加率スロット -->
+  <div id="boost-slots"></div>
+
+  <!-- STEP4 総量 -->
+  <div class="sec-label">STEP 4　仕上がり総量を入力</div>
+  <div class="field" style="margin-bottom:20px">
+    <label>今から使用する薬剤の量</label>
+    <div class="field-row">
+      <input type="number" id="total-inp" placeholder="100" min="1" oninput="onInput()">
+      <span class="field-unit">g</span>
+    </div>
+  </div>
+
+  <button class="calc-btn" id="calc-btn" onclick="calculate()" disabled>計　算</button>
+  <button class="ai-btn" id="ai-btn" onclick="showAIDiagnosis()">🔍 AI診断</button>
+  <button class="reset-btn" onclick="resetAll()">✕　リセット</button>
+
+  <!-- 結果パネル -->
+  <div class="result-panel" id="result-panel">
+    <div id="err-box" style="display:none;background:#1a0808;padding:14px 18px;font-size:12px;color:#e08080;line-height:1.7;border-top:2px solid #804040"></div>
+    <div id="ok-box">
+      <div class="res-hero">
+        <div class="res-hero-label">Total Reducer Concentration</div>
+        <div style="display:flex;align-items:baseline;gap:4px">
+          <span class="res-hero-val" id="res-total">—</span>
+          <span class="res-hero-unit">%</span>
+        </div>
+      </div>
+      <div class="res-amounts" id="res-amounts"></div>
+      <div class="res-conc">
+        <div class="res-conc-title">各成分　混合後濃度</div>
+        <div class="res-conc-grid">
+          <div class="res-ci"><div class="res-ci-label" style="color:var(--c1)">TGA①</div><div class="res-ci-val" style="color:var(--c1)"><span id="rc-1">—</span><span class="res-ci-unit">%</span></div></div>
+          <div class="res-ci"><div class="res-ci-label" style="color:var(--c2)">TGA②</div><div class="res-ci-val" style="color:var(--c2)"><span id="rc-2">—</span><span class="res-ci-unit">%</span></div></div>
+          <div class="res-ci"><div class="res-ci-label" style="color:var(--c3)">CAhcl/CA③</div><div class="res-ci-val" style="color:var(--c3)"><span id="rc-3">—</span><span class="res-ci-unit">%</span></div></div>
+          <div class="res-ci"><div class="res-ci-label" style="color:var(--c4)">その他④</div><div class="res-ci-val" style="color:var(--c4)"><span id="rc-4">—</span><span class="res-ci-unit">%</span></div></div>
+          <div class="res-ci"><div class="res-ci-label" style="color:var(--c5);text-shadow:0 0 4px rgba(0,0,0,.5)">添加剤⑤</div><div class="res-ci-val" style="color:var(--c5);text-shadow:0 0 4px rgba(0,0,0,.5)"><span id="rc-5">—</span><span class="res-ci-unit">%</span></div></div>
+          <div class="res-ci"><div class="res-ci-label" style="color:var(--b1)">GMT❶</div><div class="res-ci-val" style="color:var(--b1)"><span id="rb-1">—</span><span class="res-ci-unit">%</span></div></div>
+          <div class="res-ci"><div class="res-ci-label" style="color:var(--b2)">TG/CA❷</div><div class="res-ci-val" style="color:var(--b2)"><span id="rb-2">—</span><span class="res-ci-unit">%</span></div></div>
+          <div class="res-ci"><div class="res-ci-label" style="color:var(--b3)">SPI❸</div><div class="res-ci-val" style="color:var(--b3)"><span id="rb-3">—</span><span class="res-ci-unit">%</span></div></div>
+          <div class="res-ci"><div class="res-ci-label" style="color:#888;border:1px solid #444;border-radius:3px;padding:0 3px;display:inline-block">CA❹</div><div class="res-ci-val" style="color:var(--muted)"><span id="rb-4">—</span><span class="res-ci-unit">%</span></div></div>
+          <div class="res-ci"><div class="res-ci-label" style="color:var(--b5);text-shadow:0 0 4px rgba(0,0,0,.5)">その他❺</div><div class="res-ci-val" style="color:var(--b5);text-shadow:0 0 4px rgba(0,0,0,.5)"><span id="rb-5">—</span><span class="res-ci-unit">%</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI診断パネル -->
+  <div class="ai-panel" id="ai-panel">
+    <div class="ai-panel-header">
+      <div class="ai-icon" id="ai-icon">🔍</div>
+      <div>
+        <div class="ai-level" id="ai-level">—</div>
+        <div class="ai-pct" id="ai-pct-range">—</div>
+      </div>
+    </div>
+    <div class="ai-body">
+      <div class="ai-msg" id="ai-msg">—</div>
+      <div class="ai-tags" id="ai-tags"></div>
+    </div>
+  </div>
+
+  <!-- 注意事項 -->
+  <div class="notice">
+    <div class="notice-title">■ 本ツールについての重要事項</div>
+    <p>・本ツールは、各メーカー様が公表されている薬剤スペックをもとに、混合時の還元剤濃度を計算するための補助ツールです。</p>
+    <p>・本ツールは、各メーカー様による公式な認証・後援を受けたものではありません。本ツールの内容について、各メーカー様は一切の責任を負うものではありません。</p>
+    <p>・本ツール上に表示される濃度・成分情報は推計値を含みます。正確な値については、必ず各メーカー様の製品資料・指示に従ってください。</p>
+    <p>・本ツールの利用により生じたいかなる結果についても、運営者（株式会社ImU／Quantify-Beauty）は責任を負いません。ご利用は施術者の責任のもとお願いいたします。</p>
+    <p>・本ツール内で言及される製品名・商品名は、各メーカー様の商標・登録商標です。本ツールはこれらの製品を識別する目的のみで使用しており、商標権者との商業的関係を示すものではありません。</p>
+  </div>
+
+</div>
+
+<script>
+// ================================================================
+// 状態
+// ================================================================
+const BASE_COLORS  = ['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)'];
+const BASE_NAMES   = ['TGA①','TGA②','CAhcl/CA③','その他④','添加剤⑤'];
+const BOOST_COLORS = ['var(--b1)','var(--b2)','var(--b3)','var(--b4)','var(--b5)'];
+const BOOST_NAMES  = ['GMT❶','TG/CA❷','SPI❸','CA❹','その他❺'];
+
+let selBase  = [];  // {idx:1-5, ratio:1}
+let selBoost = [];  // {idx:1-5, pct:5}
+let lastTotal = 0;
+
+// ================================================================
+// 濃度取得
+// ================================================================
+function getBaseConc(i){ return parseFloat(document.getElementById(`conc-${i}`).value)||0; }
+function getBoostConc(i){ return parseFloat(document.getElementById(`bconc-${i}`).value)||0; }
+
+function onConcInput(){ resetResult(); }
+function onInput(){ updateCalcBtn(); resetResult(); }
+
+// ================================================================
+// 選択
+// ================================================================
+function toggleBase(i){
+  const conc = getBaseConc(i);
+  const idx  = selBase.findIndex(s=>s.idx===i);
+  if(idx>=0){
+    selBase.splice(idx,1);
+    document.getElementById(`dc-${i}`).classList.remove('selected');
+    document.getElementById(`dc-${i}`).querySelector('.dic-select-btn').textContent='選択する';
+  } else {
+    if(selBase.length>=5){ toast('ベース剤は最大5種です'); return; }
+    selBase.push({idx:i, ratio:1});
+    document.getElementById(`dc-${i}`).classList.add('selected');
+    document.getElementById(`dc-${i}`).querySelector('.dic-select-btn').textContent='✓ 選択済み';
+  }
+  renderBaseSlots(); updateCalcBtn(); resetResult();
+}
+
+function toggleBoost(i){
+  const idx = selBoost.findIndex(s=>s.idx===i);
+  if(idx>=0){
+    selBoost.splice(idx,1);
+    document.getElementById(`db-${i}`).classList.remove('selected');
+    document.getElementById(`db-${i}`).querySelector('.dic-select-btn').textContent='選択する';
+  } else {
+    if(selBoost.length>=5){ toast('添加還元剤は最大5種です'); return; }
+    selBoost.push({idx:i, pct:5});
+    document.getElementById(`db-${i}`).classList.add('selected');
+    document.getElementById(`db-${i}`).querySelector('.dic-select-btn').textContent='✓ 選択済み';
+  }
+  renderBoostSlots(); updateCalcBtn(); resetResult();
+}
+
+// ================================================================
+// スロット描画
+// ================================================================
+function renderBaseSlots(){
+  const el = document.getElementById('base-slots');
+  if(!selBase.length){
+    el.innerHTML='<div class="empty-slots">STEP1で還元剤を登録・選択してください</div>';
+    return;
+  }
+  el.innerHTML = selBase.map((s,i)=>`
+    <div class="slot-row">
+      <div class="slot-dot" style="background:${BASE_COLORS[s.idx-1]}"></div>
+      <div class="slot-info">
+        <div class="slot-name" style="color:${BASE_COLORS[s.idx-1]}">${BASE_NAMES[s.idx-1]}</div>
+        <div class="slot-conc">${getBaseConc(s.idx).toFixed(1)}%</div>
+      </div>
+      <input type="number" class="slot-ratio-inp" value="${s.ratio}" min="0"
+             oninput="selBase[${i}].ratio=parseFloat(this.value)||0;resetResult()">
+      ${i<selBase.length-1?'<span class="slot-colon">：</span>':''}
+      <button class="slot-del" onclick="removeBase(${i})">✕</button>
+    </div>`).join('');
+}
+
+function renderBoostSlots(){
+  const el = document.getElementById('boost-slots');
+  if(!selBoost.length){ el.innerHTML=''; return; }
+  el.innerHTML = selBoost.map((s,i)=>`
+    <div class="boost-row">
+      <div class="slot-dot" style="background:${BOOST_COLORS[s.idx-1]}"></div>
+      <div class="slot-info">
+        <div class="slot-name" style="color:${BOOST_COLORS[s.idx-1]}">${BOOST_NAMES[s.idx-1]}</div>
+        <div class="slot-conc">${getBoostConc(s.idx).toFixed(1)}%</div>
+      </div>
+      <input type="number" class="boost-pct-inp" value="${s.pct}" min="0" step="0.1"
+             oninput="selBoost[${i}].pct=parseFloat(this.value)||0;resetResult()">
+      <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">%</span>
+      <button class="slot-del" onclick="removeBoost(${i})">✕</button>
+    </div>`).join('');
+}
+
+function removeBase(i){
+  const s = selBase.splice(i,1)[0];
+  document.getElementById(`dc-${s.idx}`).classList.remove('selected');
+  document.getElementById(`dc-${s.idx}`).querySelector('.dic-select-btn').textContent='選択する';
+  renderBaseSlots(); updateCalcBtn(); resetResult();
+}
+function removeBoost(i){
+  const s = selBoost.splice(i,1)[0];
+  document.getElementById(`db-${s.idx}`).classList.remove('selected');
+  document.getElementById(`db-${s.idx}`).querySelector('.dic-select-btn').textContent='選択する';
+  renderBoostSlots(); updateCalcBtn(); resetResult();
+}
+
+function updateCalcBtn(){
+  const T = parseFloat(document.getElementById('total-inp').value);
+  const hasBase = selBase.length>0 && selBase.some(s=>getBaseConc(s.idx)>=0);
+  document.getElementById('calc-btn').disabled = !(hasBase && T>0);
+}
+
+// ================================================================
+// 計算
+// ================================================================
+function calculate(){
+  const T = parseFloat(document.getElementById('total-inp').value);
+  if(!T||T<=0) return;
+
+  const sumRatio = selBase.reduce((a,s)=>a+(s.ratio||0),0);
+  if(sumRatio===0){ showErr('比率の合計が0です'); return; }
+
+  // ブースト剤合計%
+  const boostTotalPct = selBoost.reduce((a,s)=>a+(s.pct||0),0);
+  const baseTotal  = T / (1 + boostTotalPct/100);
+  const boostTotal = T - baseTotal;
+
+  // 各ベース量
+  const baseAmts = selBase.map(s=>({
+    idx:s.idx, conc:getBaseConc(s.idx),
+    amt: baseTotal*(s.ratio||0)/sumRatio,
+    color: BASE_COLORS[s.idx-1], name: BASE_NAMES[s.idx-1]
+  }));
+  // 各ブースト量
+  const boostAmts = selBoost.map(s=>({
+    idx:s.idx, conc:getBoostConc(s.idx),
+    amt: baseTotal*(s.pct||0)/100,
+    color: BOOST_COLORS[s.idx-1], name: BOOST_NAMES[s.idx-1]
+  }));
+
+  // 純分計算
+  let pureBase  = [0,0,0,0,0];
+  let pureBoost = [0,0,0,0,0];
+  baseAmts.forEach(a=>{ pureBase[a.idx-1]  += a.amt*a.conc/100; });
+  boostAmts.forEach(a=>{ pureBoost[a.idx-1] += a.amt*a.conc/100; });
+
+  const totalConc = ([...pureBase,...pureBoost].reduce((a,v)=>a+v,0))/T*100;
+  lastTotal = totalConc;
+
+  // 表示
+  const panel = document.getElementById('result-panel');
+  panel.classList.add('visible');
+  setTimeout(()=>panel.classList.add('show'),10);
+  document.getElementById('err-box').style.display='none';
+  document.getElementById('ok-box').style.display='block';
+  document.getElementById('res-total').textContent = totalConc.toFixed(3);
+
+  // 薬剤量グリッド
+  const allAmts = [...baseAmts, ...boostAmts];
+  document.getElementById('res-amounts').innerHTML = allAmts.map(a=>`
+    <div class="res-amt" style="--item-color:${a.color}">
+      <div class="res-amt-label">${a.name}</div>
+      <div><span style="font-family:var(--mono);font-size:22px;font-weight:500">${a.amt.toFixed(1)}</span><span class="res-amt-unit">g</span></div>
+      <div class="res-amt-pct">${(a.amt/T*100).toFixed(1)}%</div>
+    </div>`).join('');
+
+  // 成分濃度
+  for(let i=1;i<=5;i++){
+    document.getElementById(`rc-${i}`).textContent=(pureBase[i-1]/T*100).toFixed(3);
+    document.getElementById(`rb-${i}`).textContent=(pureBoost[i-1]/T*100).toFixed(3);
+    document.getElementById(`rc-${i}`).closest('.res-ci').classList.toggle('res-ci-zero',pureBase[i-1]===0);
+    document.getElementById(`rb-${i}`).closest('.res-ci').classList.toggle('res-ci-zero',pureBoost[i-1]===0);
+  }
+
+  document.getElementById('ai-btn').classList.add('show');
+  panel.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ================================================================
+// AI診断
+// ================================================================
+function showAIDiagnosis(){
+  const v = lastTotal;
+  let icon, level, range, msg, tags, bgColor, borderColor, textColor;
+
+  // 医薬部外品と化粧品ミックスチェック
+  const hasMedical = selBase.some(s=>[1,2].includes(s.idx)&&getBaseConc(s.idx)>0);
+  const hasCosme   = selBase.some(s=>[3,4,5].includes(s.idx)&&getBaseConc(s.idx)>0)
+                  || selBoost.some(s=>getBoostConc(s.idx)>0);
+  const isMixed    = hasMedical && hasCosme;
+
+  if(v > 11){
+    icon='🟥🟥'; level='超高濃度 — 要注意';
+    range='11%超';
+    bgColor='#2a0808'; borderColor='#c03030'; textColor='#ff8080';
+    msg='還元剤（有効成分）が非常に高濃度です。ダメージレベルが高いお客様に使用するとダメージを与える可能性が非常に高くなります。毛髪診断を十分に行い、慎重に判断してください。';
+    tags=['超高濃度','医薬部外品基準超過','施術慎重'];
+  } else if(v > 7){
+    icon='🟥'; level='高濃度 — 注意が必要';
+    range='7〜11%';
+    bgColor='#200808'; borderColor='#a03030'; textColor='#ff9090';
+    msg='化粧品自主基準枠を超える濃度です。ダメージレベルが高いお客様だとダメージを与える可能性があります。毛髪診断を徹底し、塗布量・放置時間に十分注意してください。';
+    tags=['高濃度','自主基準超過','毛髪診断必須'];
+  } else if(v > 4){
+    icon='🟢'; level='基準内（上限付近）';
+    range='4〜7%';
+    bgColor='#081a0a'; borderColor='#3a8a3a'; textColor='#80e080';
+    msg='化粧品自主基準の枠内になります。ただし、ダメージレベルが高いお客様だとダメージを与える可能性があります。毛髪診断をしっかり行ってください。';
+    tags=['化粧品基準内','毛髪診断推奨'];
+  } else if(v > 1){
+    icon='🟢'; level='基準内（安全圏）';
+    range='1〜4%';
+    bgColor='#081a0a'; borderColor='#3a8a3a'; textColor='#80e080';
+    msg='化粧品自主基準の枠内になります。毛髪診断をしっかりなさって、塗布量・塗布する順番に気を付けてください。';
+    tags=['化粧品基準内','塗布順に注意'];
+  } else {
+    icon='⚪'; level='極低濃度';
+    range='0〜1%';
+    bgColor='#0a0a0a'; borderColor='#404040'; textColor='#a0a0a0';
+    msg='還元剤濃度が非常に低い状態です。施術効果が出にくい可能性があります。レシピの見直しをご検討ください。';
+    tags=['極低濃度','効果要確認'];
+  }
+
+  // ミックス警告を追加
+  if(isMixed){
+    msg += '\n\n⚠️ 医薬部外品と化粧品登録薬剤のミックスが含まれています。各メーカーの指示に従い、自己判断・自己責任のもとでご使用ください。';
+    tags.push('医薬部外品×化粧品ミックス');
+  }
+
+  const panel = document.getElementById('ai-panel');
+  panel.style.setProperty('--ai-bg',    bgColor);
+  panel.style.setProperty('--ai-border',borderColor);
+  panel.style.setProperty('--ai-color', textColor);
+  document.getElementById('ai-icon').textContent    = icon;
+  document.getElementById('ai-level').textContent   = level;
+  document.getElementById('ai-pct-range').textContent = `総還元値 ${lastTotal.toFixed(3)}%（${range}）`;
+  document.getElementById('ai-msg').textContent     = msg;
+  document.getElementById('ai-tags').innerHTML = tags.map(t=>`<span class="ai-tag">${t}</span>`).join('');
+  panel.classList.add('show');
+  panel.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function showErr(msg){
+  const panel=document.getElementById('result-panel');
+  panel.classList.add('visible','show');
+  document.getElementById('err-box').style.display='block';
+  document.getElementById('err-box').textContent='⚠ '+msg;
+  document.getElementById('ok-box').style.display='none';
+}
+
+function resetResult(){
+  document.getElementById('result-panel').classList.remove('visible','show');
+  document.getElementById('ai-panel').classList.remove('show');
+  document.getElementById('ai-btn').classList.remove('show');
+}
+
+function resetAll(){
+  selBase=[]; selBoost=[]; lastTotal=0;
+  for(let i=1;i<=5;i++){
+    document.getElementById(`dc-${i}`).classList.remove('selected');
+    document.getElementById(`dc-${i}`).querySelector('.dic-select-btn').textContent='選択する';
+    document.getElementById(`db-${i}`).classList.remove('selected');
+    document.getElementById(`db-${i}`).querySelector('.dic-select-btn').textContent='選択する';
+  }
+  document.getElementById('total-inp').value='';
+  renderBaseSlots(); renderBoostSlots(); resetResult(); updateCalcBtn();
+}
+
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2000);
+}
+
+// 初期化
+renderBaseSlots();
+</script>
+</body>
+</html>
